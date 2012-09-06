@@ -154,6 +154,7 @@
         </activity>
         <activity android:name="com.android.music.QueryBrowserActivity"
                 android:label="@string/search_title"
+                android:configChanges="orientation|keyboardHidden"
                 android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.SEARCH" />
