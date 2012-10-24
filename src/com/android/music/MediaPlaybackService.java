@@ -1748,7 +1748,7 @@ public class MediaPlaybackService extends Service {
 
     public String getArtistName() {
         synchronized(this) {
-            if (mCursor == null) {
+            if (mCursor == null || mCursor.getCount() == 0) {
                 return null;
             }
             return mCursor.getString(mCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST));
@@ -1757,7 +1757,7 @@ public class MediaPlaybackService extends Service {
     
     public long getArtistId() {
         synchronized (this) {
-            if (mCursor == null) {
+            if (mCursor == null || mCursor.getCount() == 0) {
                 return -1;
             }
             return mCursor.getLong(mCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST_ID));
@@ -1766,7 +1766,7 @@ public class MediaPlaybackService extends Service {
 
     public String getAlbumName() {
         synchronized (this) {
-            if (mCursor == null) {
+            if (mCursor == null || mCursor.getCount() == 0) {
                 return null;
             }
             return mCursor.getString(mCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM));
@@ -1775,7 +1775,7 @@ public class MediaPlaybackService extends Service {
 
     public long getAlbumId() {
         synchronized (this) {
-            if (mCursor == null) {
+            if (mCursor == null || mCursor.getCount() == 0) {
                 return -1;
             }
             return mCursor.getLong(mCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID));
@@ -1784,7 +1784,7 @@ public class MediaPlaybackService extends Service {
 
     public String getTrackName() {
         synchronized (this) {
-            if (mCursor == null) {
+            if (mCursor == null || mCursor.getCount() == 0) {
                 return null;
             }
             return mCursor.getString(mCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE));
@@ -1793,7 +1793,7 @@ public class MediaPlaybackService extends Service {
 
     private boolean isPodcast() {
         synchronized (this) {
-            if (mCursor == null) {
+            if (mCursor == null || mCursor.getCount() == 0) {
                 return false;
             }
             return (mCursor.getInt(PODCASTCOLIDX) > 0);
@@ -1802,7 +1802,7 @@ public class MediaPlaybackService extends Service {
     
     private long getBookmark() {
         synchronized (this) {
-            if (mCursor == null) {
+            if (mCursor == null || mCursor.getCount() == 0) {
                 return 0;
             }
             return mCursor.getLong(BOOKMARKCOLIDX);
