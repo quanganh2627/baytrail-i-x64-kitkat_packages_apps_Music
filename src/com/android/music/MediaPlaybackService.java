@@ -2051,7 +2051,11 @@ public class MediaPlaybackService extends Service {
             if (mCompatMode) {
                 mNextPlayer = next;
             } else {
-                super.setNextMediaPlayer(next);
+                try {
+                    super.setNextMediaPlayer(next);
+                } catch (IllegalArgumentException e) {
+                    Log.d("CompatMediaPlayer", "error: IllegalArgumentException");
+                }
             }
         }
 
