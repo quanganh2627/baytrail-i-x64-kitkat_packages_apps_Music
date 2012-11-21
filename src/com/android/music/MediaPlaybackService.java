@@ -1229,6 +1229,7 @@ public class MediaPlaybackService extends Service {
         if (mPlayer != null) {
             if (mPlayer.isInitialized()) {
                 mPlayer.stop();
+                mPlayer.setNextDataSource(null);
             }
         }
         mFileToPlay = null;
