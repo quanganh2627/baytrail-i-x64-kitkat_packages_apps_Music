@@ -522,9 +522,17 @@ public class TrackBrowserActivity extends ListActivity
         new TouchInterceptor.DropListener() {
         public void drop(int from, int to) {
             if (mTrackCursor instanceof NowPlayingCursor) {
+                // In case queue is changed, manually call onReceive
+                if (((NowPlayingCursor)mTrackCursor).isQueueChanged()) {
+                    mNowPlayingListener.onReceive(TrackBrowserActivity.this,
+                                                  new Intent(MediaPlaybackService.QUEUE_CHANGED));
+                    Log.d(LOGTAG, "Queue is changed, need to manually refresh NowPlayingCursor.");
+                }
                 // update the currently playing list
-                NowPlayingCursor c = (NowPlayingCursor) mTrackCursor;
-                c.moveItem(from, to);
+                if (mTrackCursor != null ) {
+                    NowPlayingCursor c = (NowPlayingCursor) mTrackCursor;
+                    c.moveItem(from, to);
+                }
                 ((TrackListAdapter)getListAdapter()).notifyDataSetChanged();
                 getListView().invalidateViews();
                 mDeletedOneRow = true;
@@ -562,6 +570,7 @@ public class TrackBrowserActivity extends ListActivity
         mTrackList.invalidateViews();
         if (mTrackCursor instanceof NowPlayingCursor) {
             ((NowPlayingCursor)mTrackCursor).removeItem(which);
+            ((TrackListAdapter)getListAdapter()).notifyDataSetChanged();
         } else {
             int colidx = mTrackCursor.getColumnIndexOrThrow(
                     MediaStore.Audio.Playlists.Members._ID);
@@ -814,6 +823,7 @@ public class TrackBrowserActivity extends ListActivity
             v.setVisibility(View.GONE);
             mTrackList.invalidateViews();
             ((NowPlayingCursor)mTrackCursor).removeItem(curpos);
+            ((TrackListAdapter)getListAdapter()).notifyDataSetChanged();
             v.setVisibility(View.VISIBLE);
             mTrackList.invalidateViews();
         } else {
@@ -1234,6 +1244,19 @@ public class TrackBrowserActivity extends ListActivity
             }
             where += ")";
             Log.i("NowPlayingCursor: ", where);
+        }
+
+        public boolean isQueueChanged() {
+            try {
+                long[] list = mService.getQueue();
+                if (list.length == mSize) {
+                    return false;
+                } else {
+                    return true;
+                }
+            } catch (RemoteException ex) {
+            }
+            return true;
         }
 
         @Override
