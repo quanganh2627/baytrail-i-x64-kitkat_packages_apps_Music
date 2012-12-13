@@ -1578,6 +1578,12 @@ public class TrackBrowserActivity extends ListActivity
             mConstraintIsValid = true;
             return c;
         }
+
+        @Override
+        public void onContentChanged() {
+            super.onContentChanged();
+            notifyDataSetChanged();
+        }
         
         // SectionIndexer methods
         
