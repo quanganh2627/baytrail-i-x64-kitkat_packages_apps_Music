@@ -21,7 +21,6 @@ import android.content.AsyncQueryHandler;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -32,7 +31,6 @@ import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.PowerManager;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.text.TextUtils;
@@ -71,6 +69,7 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
     private static final int OPEN_IN_MUSIC = 1;
     private AudioManager mAudioManager;
     private boolean mPausedByTransientLossOfFocus;
+    private boolean mProgressRefresh;
 
     @Override
     public void onCreate(Bundle icicle) {
@@ -198,19 +197,20 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        IntentFilter f = new IntentFilter();
-        f.addAction(Intent.ACTION_SCREEN_ON);
-    }
-
-    @Override
     public void onResume() {
         super.onResume();
+        mProgressRefresh = true;
         if (mProgressRefresher != null) {
             mProgressRefresher.postDelayed(new ProgressRefresher(), 200);
         }
     }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mProgressRefresh = false;
+    }
+
     @Override
     public Object onRetainNonConfigurationInstance() {
         PreviewPlayer player = mPlayer;
@@ -325,9 +325,8 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
                 mSeekBar.setProgress(mPlayer.getCurrentPosition());
             }
             mProgressRefresher.removeCallbacksAndMessages(null);
-            //Post the refresh message only when the screen is ON
-            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-            if (pm.isScreenOn()) {
+            //Post the refresh message only when the activity is in foreground
+            if (mProgressRefresh) {
                 mProgressRefresher.postDelayed(new ProgressRefresher(), 200);
             }
         }
