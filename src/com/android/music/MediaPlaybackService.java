@@ -49,6 +49,8 @@ import android.os.PowerManager;
 import android.os.SystemClock;
 import android.os.PowerManager.WakeLock;
 import android.provider.MediaStore;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.widget.RemoteViews;
 import android.widget.Toast;
@@ -109,6 +111,8 @@ public class MediaPlaybackService extends Service {
     private static final int TRACK_WENT_TO_NEXT = 7;
     private static final int MAX_HISTORY_SIZE = 100;
     
+    private static final int PHONESTATECHANGE = 20;
+
     private MultiPlayer mPlayer;
     private String mFileToPlay;
     private int mShuffleMode = SHUFFLE_NONE;
@@ -146,9 +150,12 @@ public class MediaPlaybackService extends Service {
     private boolean mIsSupposedToBePlaying = false;
     private boolean mQuietMode = false;
     private AudioManager mAudioManager;
+    private TelephonyManager mTelephonyManager;
     private boolean mQueueIsSaveable = true;
     // used to track what type of audio focus loss caused the playback to pause
     private boolean mPausedByTransientLossOfFocus = false;
+    // used to track what type of phone state caused the playback to pause
+    private boolean mPausedByPhoneInUse = false;
 
     private SharedPreferences mPreferences;
     // We use this to distinguish between different cards when saving/restoring playlists.
@@ -265,9 +272,48 @@ public class MediaPlaybackService extends Service {
                     }
                     break;
 
+                case PHONESTATECHANGE:
+                    switch (msg.arg1) {
+                        case TelephonyManager.CALL_STATE_IDLE:
+                            Log.d(LOGTAG, "Telephone state change: TelephonyManager.CALL_STATE_IDLE:" );
+                            if (!isPlaying() && mPausedByPhoneInUse) {
+                               mPausedByPhoneInUse = false;
+                               play();
+                            }
+                            break;
+                        case TelephonyManager.CALL_STATE_RINGING:
+                            Log.d(LOGTAG, "Telephone state change: TelephonyManager.CALL_STATE_RINGING:" );
+                        case TelephonyManager.CALL_STATE_OFFHOOK:
+                            Log.d(LOGTAG, "Telephone state change: TelephonyManager.CALL_STATE_OFFHOOK:" );
+                            if (isPlaying()) {
+                               mPausedByPhoneInUse = true;
+                               pause();
+                            }
+                            break;
+                        default:
+                            Log.e(LOGTAG, "Unknown phone state change code");
+                    }
+                    break;
+
                 default:
                     break;
             }
+        }
+    };
+
+    private BroadcastReceiver mPhoneReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.v(LOGTAG, "action = " + intent.getAction());
+            mTelephonyManager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
+        }
+    };
+
+    private final PhoneStateListener mPhoneStateListener = new PhoneStateListener() {
+
+        @Override
+        public void onCallStateChanged(int state, String incomingNumber) {
+           mMediaplayerHandler.obtainMessage(PHONESTATECHANGE, state, 0).sendToTarget();
         }
     };
 
@@ -319,6 +365,7 @@ public class MediaPlaybackService extends Service {
     public void onCreate() {
         super.onCreate();
 
+        mTelephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         ComponentName rec = new ComponentName(getPackageName(),
                 MediaButtonIntentReceiver.class.getName());
@@ -347,6 +394,10 @@ public class MediaPlaybackService extends Service {
         reloadQueue();
         notifyChange(QUEUE_CHANGED);
         notifyChange(META_CHANGED);
+
+        IntentFilter phoneFilter = new IntentFilter();
+        phoneFilter.addAction(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
+        registerReceiver(mPhoneReceiver, phoneFilter);
 
         IntentFilter commandFilter = new IntentFilter();
         commandFilter.addAction(SERVICECMD);
@@ -392,6 +443,7 @@ public class MediaPlaybackService extends Service {
             mCursor = null;
         }
 
+        unregisterReceiver(mPhoneReceiver);
         unregisterReceiver(mIntentReceiver);
         if (mUnmountReceiver != null) {
             unregisterReceiver(mUnmountReceiver);
@@ -2221,4 +2273,5 @@ public class MediaPlaybackService extends Service {
     }
 
     private final IBinder mBinder = new ServiceStub(this);
+
 }
