@@ -419,6 +419,7 @@ public class MediaPlaybackService extends Service {
 
     @Override
     public void onDestroy() {
+        super.onDestroy();
         // Check that we're not being destroyed while something is still playing.
         if (isPlaying()) {
             Log.e(LOGTAG, "Service being destroyed while still playing.");
@@ -450,7 +451,6 @@ public class MediaPlaybackService extends Service {
             mUnmountReceiver = null;
         }
         mWakeLock.release();
-        super.onDestroy();
     }
     
     private final char hexdigits [] = new char [] {
@@ -1904,7 +1904,7 @@ public class MediaPlaybackService extends Service {
      * @param pos The position to seek to, in milliseconds
      */
     public long seek(long pos) {
-        if (mPlayer.isInitialized()) {
+        if (mPlayer != null && mPlayer.isInitialized()) {
             if (pos < 0) pos = 0;
             if (pos > mPlayer.duration()) pos = mPlayer.duration();
             return mPlayer.seek(pos);
