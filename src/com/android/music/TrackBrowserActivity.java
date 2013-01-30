@@ -894,7 +894,7 @@ public class TrackBrowserActivity extends ListActivity
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id)
     {
-        if (mTrackCursor.getCount() == 0) {
+        if (mTrackCursor == null || mTrackCursor.getCount() == 0) {
             return;
         }
         // When selecting a track from the queue, just jump there instead of
