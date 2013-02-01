@@ -1545,6 +1545,12 @@ public class MediaPlaybackService extends Service {
             removeTracks(0, mPlayPos - 9);
             notify = true;
         }
+
+        int len = mAutoShuffleList.length;
+        if (len <= 0) {
+            return;
+        }
+
         // add new entries if needed
         int to_add = 7 - (mPlayListLen - (mPlayPos < 0 ? -1 : mPlayPos));
         for (int i = 0; i < to_add; i++) {
@@ -1553,7 +1559,7 @@ public class MediaPlaybackService extends Service {
             int lookback = mHistory.size();
             int idx = -1;
             while(true) {
-                idx = mRand.nextInt(mAutoShuffleList.length);
+                idx = mRand.nextInt(len);
                 if (!wasRecentlyUsed(idx, lookback)) {
                     break;
                 }
