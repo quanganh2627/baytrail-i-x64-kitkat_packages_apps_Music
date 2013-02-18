@@ -125,6 +125,8 @@ public class MediaPlaybackService extends Service {
     private Cursor mCursor;
     private int mPlayPos = -1;
     private int mNextPlayPos = -1;
+    private long curPos = -1L;
+    private boolean manulPause;
     private static final String LOGTAG = "MediaPlaybackService";
     private final Shuffler mRand = new Shuffler();
     private int mOpenFailedCounter = 0;
@@ -1312,6 +1314,8 @@ public class MediaPlaybackService extends Service {
             if (isPlaying()) {
                 mPlayer.pause();
                 gotoIdleState();
+                curPos = position();
+                manulPause = true;
                 mIsSupposedToBePlaying = false;
                 notifyChange(PLAYSTATE_CHANGED);
                 saveBookmarkIfNeeded();
@@ -1890,7 +1894,10 @@ public class MediaPlaybackService extends Service {
      */
     public long position() {
         if (mPlayer.isInitialized()) {
-            return mPlayer.position();
+            if (manulPause)
+                return curPos;
+            else
+                return mPlayer.position();
         }
         return -1;
     }
@@ -2005,6 +2012,7 @@ public class MediaPlaybackService extends Service {
 
         public void start() {
             MusicUtils.debugLog(new Exception("MultiPlayer.start called"));
+            manulPause = false;
             mCurrentMediaPlayer.start();
         }
 
