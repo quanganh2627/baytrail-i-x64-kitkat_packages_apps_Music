@@ -1613,12 +1613,17 @@ public class MediaPlaybackService extends Service {
         private int mPrevious;
         private Random mRandom = new Random();
         public int nextInt(int interval) {
-            int ret;
-            do {
-                ret = mRandom.nextInt(interval);
-            } while (ret == mPrevious && interval > 1);
-            mPrevious = ret;
-            return ret;
+            int ret = 0;
+            try {
+                do {
+                    ret = mRandom.nextInt(interval);
+                } while (ret == mPrevious && interval > 1);
+            } catch (IllegalArgumentException ex) {
+                Log.d("", "Illegal argument interval=" + interval);
+            } finally {
+                mPrevious = ret;
+                return ret;
+            }
         }
     };
 
