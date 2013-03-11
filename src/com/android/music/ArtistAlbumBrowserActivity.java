@@ -609,7 +609,7 @@ public class ArtistAlbumBrowserActivity extends ExpandableListActivity
         }
         
         private void getColumnIndices(Cursor cursor) {
-            if (cursor != null && !cursor.isClosed()) {
+            if (cursor != null) {
                 mGroupArtistIdIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists._ID);
                 mGroupArtistIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.ARTIST);
                 mGroupAlbumIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.NUMBER_OF_ALBUMS);

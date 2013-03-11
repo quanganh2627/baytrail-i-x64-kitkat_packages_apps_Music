@@ -21,7 +21,6 @@ import android.content.AsyncQueryHandler;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -32,7 +31,6 @@ import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.PowerManager;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.text.TextUtils;
@@ -198,20 +196,6 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        IntentFilter f = new IntentFilter();
-        f.addAction(Intent.ACTION_SCREEN_ON);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        if (mProgressRefresher != null) {
-            mProgressRefresher.postDelayed(new ProgressRefresher(), 200);
-        }
-    }
-    @Override
     public Object onRetainNonConfigurationInstance() {
         PreviewPlayer player = mPlayer;
         mPlayer = null;
@@ -325,11 +309,7 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
                 mSeekBar.setProgress(mPlayer.getCurrentPosition());
             }
             mProgressRefresher.removeCallbacksAndMessages(null);
-            //Post the refresh message only when the screen is ON
-            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-            if (pm.isScreenOn()) {
-                mProgressRefresher.postDelayed(new ProgressRefresher(), 200);
-            }
+            mProgressRefresher.postDelayed(new ProgressRefresher(), 200);
         }
     }
     
@@ -395,8 +375,7 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
         // database, and we could open it in the full music app instead.
         // Ideally, we would hand off the currently running mediaplayer
         // to the music UI, which can probably be done via a public static
-
-        //menu.add(0, OPEN_IN_MUSIC, 0, "open in music");
+        menu.add(0, OPEN_IN_MUSIC, 0, "open in music");
         return true;
     }
 
