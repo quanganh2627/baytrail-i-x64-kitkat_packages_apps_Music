@@ -19,9 +19,10 @@
     android:hint="@string/search_hint"
     android:includeInGlobalSearch="true"
 
+    android:imeOptions="actionSearch|flagNoExtractUi"
     android:searchSuggestAuthority="media"
     android:searchSuggestPath="external/audio/search"
-    android:searchSuggestThreshold="3"
+    android:searchSuggestThreshold="2"
     android:searchSuggestIntentAction="android.intent.action.VIEW"
     android:searchSettingsDescription="@string/search_settings_description"
 />

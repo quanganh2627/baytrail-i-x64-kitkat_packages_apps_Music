@@ -463,7 +463,7 @@ public class TrackBrowserActivity extends ListActivity
                         // compilation album
                         fancyName = mTrackCursor.getString(idx);
                     }    
-                    cursor.deactivate();
+                    cursor.close();
                 }
                 if (fancyName == null || fancyName.equals(MediaStore.UNKNOWN_STRING)) {
                     fancyName = getString(R.string.unknown_album_name);
@@ -492,7 +492,7 @@ public class TrackBrowserActivity extends ListActivity
                         cursor.moveToFirst();
                         fancyName = cursor.getString(0);
                     }
-                    cursor.deactivate();
+                    cursor.close();
                 }
             }
         } else if (mGenre != null) {
@@ -507,7 +507,7 @@ public class TrackBrowserActivity extends ListActivity
                     cursor.moveToFirst();
                     fancyName = cursor.getString(0);
                 }
-                cursor.deactivate();
+                cursor.close();
             }
         }
 
@@ -522,9 +522,17 @@ public class TrackBrowserActivity extends ListActivity
         new TouchInterceptor.DropListener() {
         public void drop(int from, int to) {
             if (mTrackCursor instanceof NowPlayingCursor) {
+                // In case queue is changed, manually call onReceive
+                if (((NowPlayingCursor)mTrackCursor).isQueueChanged()) {
+                    mNowPlayingListener.onReceive(TrackBrowserActivity.this,
+                                                  new Intent(MediaPlaybackService.QUEUE_CHANGED));
+                    Log.d(LOGTAG, "Queue is changed, need to manually refresh NowPlayingCursor.");
+                }
                 // update the currently playing list
-                NowPlayingCursor c = (NowPlayingCursor) mTrackCursor;
-                c.moveItem(from, to);
+                if (mTrackCursor != null ) {
+                    NowPlayingCursor c = (NowPlayingCursor) mTrackCursor;
+                    c.moveItem(from, to);
+                }
                 ((TrackListAdapter)getListAdapter()).notifyDataSetChanged();
                 getListView().invalidateViews();
                 mDeletedOneRow = true;
@@ -562,6 +570,7 @@ public class TrackBrowserActivity extends ListActivity
         mTrackList.invalidateViews();
         if (mTrackCursor instanceof NowPlayingCursor) {
             ((NowPlayingCursor)mTrackCursor).removeItem(which);
+            ((TrackListAdapter)getListAdapter()).notifyDataSetChanged();
         } else {
             int colidx = mTrackCursor.getColumnIndexOrThrow(
                     MediaStore.Audio.Playlists.Members._ID);
@@ -814,6 +823,7 @@ public class TrackBrowserActivity extends ListActivity
             v.setVisibility(View.GONE);
             mTrackList.invalidateViews();
             ((NowPlayingCursor)mTrackCursor).removeItem(curpos);
+            ((TrackListAdapter)getListAdapter()).notifyDataSetChanged();
             v.setVisibility(View.VISIBLE);
             mTrackList.invalidateViews();
         } else {
@@ -884,7 +894,7 @@ public class TrackBrowserActivity extends ListActivity
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id)
     {
-        if (mTrackCursor.getCount() == 0) {
+        if (mTrackCursor == null || mTrackCursor.getCount() == 0) {
             return;
         }
         // When selecting a track from the queue, just jump there instead of
@@ -1236,6 +1246,19 @@ public class TrackBrowserActivity extends ListActivity
             Log.i("NowPlayingCursor: ", where);
         }
 
+        public boolean isQueueChanged() {
+            try {
+                long[] list = mService.getQueue();
+                if (list.length == mSize) {
+                    return false;
+                } else {
+                    return true;
+                }
+            } catch (RemoteException ex) {
+            }
+            return true;
+        }
+
         @Override
         public String getString(int column)
         {
@@ -1309,6 +1332,14 @@ public class TrackBrowserActivity extends ListActivity
         {
             if (mCurrentPlaylistCursor != null)
                 mCurrentPlaylistCursor.deactivate();
+        }
+
+        @Override
+        public void close()
+        {
+            if (mCurrentPlaylistCursor != null) {
+                mCurrentPlaylistCursor.close();
+            }
         }
 
         @Override
@@ -1395,7 +1426,7 @@ public class TrackBrowserActivity extends ListActivity
             protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
                 //Log.i("@@@", "query complete: " + cursor.getCount() + "   " + mActivity);
                 mActivity.init(cursor, cookie != null);
-                if (token == 0 && cookie != null && cursor != null && cursor.getCount() >= 100) {
+                if (token == 0 && cookie != null && cursor != null && !cursor.isClosed() && cursor.getCount() >= 100) {
                     QueryArgs args = (QueryArgs) cookie;
                     startQuery(1, null, args.uri, args.projection, args.selection,
                             args.selectionArgs, args.orderBy);
@@ -1554,6 +1585,12 @@ public class TrackBrowserActivity extends ListActivity
             mConstraint = s;
             mConstraintIsValid = true;
             return c;
+        }
+
+        @Override
+        public void onContentChanged() {
+            super.onContentChanged();
+            notifyDataSetChanged();
         }
         
         // SectionIndexer methods
