@@ -109,6 +109,7 @@ public class MediaPlaybackService extends Service {
     private static final int FADEDOWN = 5;
     private static final int FADEUP = 6;
     private static final int TRACK_WENT_TO_NEXT = 7;
+    private static final int UNKNOWN_ERROR = 8;
     private static final int MAX_HISTORY_SIZE = 100;
     
     private static final int PHONESTATECHANGE = 20;
@@ -194,6 +195,11 @@ public class MediaPlaybackService extends Service {
                         mCurrentVolume = 1.0f;
                     }
                     mPlayer.setVolume(mCurrentVolume);
+                    break;
+                case UNKNOWN_ERROR:
+                    gotoIdleState();
+                    Toast.makeText(MediaPlaybackService.this, "unsupported media file!", Toast.LENGTH_SHORT).show();
+                    SystemClock.sleep(1000);
                     break;
                 case SERVER_DIED:
                     if (mIsSupposedToBePlaying) {
@@ -2072,6 +2078,11 @@ public class MediaPlaybackService extends Service {
         MediaPlayer.OnErrorListener errorListener = new MediaPlayer.OnErrorListener() {
             public boolean onError(MediaPlayer mp, int what, int extra) {
                 switch (what) {
+                case MediaPlayer.MEDIA_ERROR_UNKNOWN:
+                    mIsInitialized = false;
+                    mCurrentMediaPlayer.release();
+                    mHandler.sendMessage(mHandler.obtainMessage(UNKNOWN_ERROR));
+                    return true;
                 case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
                     mIsInitialized = false;
                     mCurrentMediaPlayer.release();
