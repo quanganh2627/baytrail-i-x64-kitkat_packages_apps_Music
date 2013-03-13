@@ -1920,6 +1920,7 @@ public class MediaPlaybackService extends Service {
      */
     public long seek(long pos) {
         if (mPlayer != null && mPlayer.isInitialized()) {
+            manulPause = false;
             if (pos < 0) pos = 0;
             if (pos > mPlayer.duration()) pos = mPlayer.duration();
             return mPlayer.seek(pos);
