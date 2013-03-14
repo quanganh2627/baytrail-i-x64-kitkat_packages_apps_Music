@@ -340,6 +340,7 @@ public class MediaPlaybackService extends Service {
                 }
             } else if (CMDPAUSE.equals(cmd) || PAUSE_ACTION.equals(action)) {
                 pause();
+                mPausedByPhoneInUse = false;
                 mPausedByTransientLossOfFocus = false;
             } else if (CMDPLAY.equals(cmd)) {
                 play();
@@ -727,6 +728,7 @@ public class MediaPlaybackService extends Service {
                 }
             } else if (CMDPAUSE.equals(cmd) || PAUSE_ACTION.equals(action)) {
                 pause();
+                mPausedByPhoneInUse = false;
                 mPausedByTransientLossOfFocus = false;
             } else if (CMDPLAY.equals(cmd)) {
                 play();
