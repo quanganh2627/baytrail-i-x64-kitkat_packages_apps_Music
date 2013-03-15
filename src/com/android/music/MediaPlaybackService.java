@@ -598,26 +598,6 @@ public class MediaPlaybackService extends Service {
                 crsr.close();
             }
 
-            // Make sure we don't auto-skip to the next song, since that
-            // also starts playback. What could happen in that case is:
-            // - music is paused
-            // - go to UMS and delete some files, including the currently playing one
-            // - come back from UMS
-            // (time passes)
-            // - music app is killed for some reason (out of memory)
-            // - music service is restarted, service restores state, doesn't find
-            //   the "current" file, goes to the next and: playback starts on its
-            //   own, potentially at some random inconvenient time.
-            mOpenFailedCounter = 20;
-            mQuietMode = true;
-            openCurrentAndNext();
-            mQuietMode = false;
-            if (!mPlayer.isInitialized()) {
-                // couldn't restore the saved state
-                mPlayListLen = 0;
-                return;
-            }
-            
             long seekpos = mPreferences.getLong("seekpos", 0);
             seek(seekpos >= 0 && seekpos < duration() ? seekpos : 0);
             Log.d(LOGTAG, "restored queue, currently at position "
@@ -675,6 +655,26 @@ public class MediaPlaybackService extends Service {
                 }
             }
             mShuffleMode = shufmode;
+
+            // Make sure we don't auto-skip to the next song, since that
+            // also starts playback. What could happen in that case is:
+            // - music is paused
+            // - go to UMS and delete some files, including the currently playing one
+            // - come back from UMS
+            // (time passes)
+            // - music app is killed for some reason (out of memory)
+            // - music service is restarted, service restores state, doesn't find
+            //   the "current" file, goes to the next and: playback starts on its
+            //   own, potentially at some random inconvenient time.
+            mOpenFailedCounter = 20;
+            mQuietMode = true;
+            openCurrentAndNext();
+            mQuietMode = false;
+            if (!mPlayer.isInitialized()) {
+                // couldn't restore the saved state
+                mPlayListLen = 0;
+                return;
+            }
         }
     }
     
@@ -1384,8 +1384,14 @@ public class MediaPlaybackService extends Service {
      */
     private int getNextPosition(boolean force) {
         if (mRepeatMode == REPEAT_CURRENT) {
-            if (mPlayPos < 0) return 0;
-            return mPlayPos;
+            if (!force) {
+                return mPlayPos < 0 ? 0 : mPlayPos;
+            }
+            if (mPlayPos < 0 || mPlayPos >= mPlayListLen - 1 ) {
+                return 0;
+            } else {
+                return mPlayPos + 1;
+            }
         } else if (mShuffleMode == SHUFFLE_NORMAL) {
             // Pick random next track from the not-yet-played ones
             // TODO: make it work right after adding/removing items in the queue.
