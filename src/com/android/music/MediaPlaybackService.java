@@ -826,10 +826,10 @@ public class MediaPlaybackService extends Service {
                     } else if (action.equals(Intent.ACTION_MEDIA_MOUNTED)) {
                         mMediaMountedCount++;
                         mCardId = MusicUtils.getCardId(MediaPlaybackService.this);
-                        reloadQueue();
                         mQueueIsSaveable = true;
                         notifyChange(QUEUE_CHANGED);
                         notifyChange(META_CHANGED);
+                        reloadQueue();
                     }
                 }
             };
