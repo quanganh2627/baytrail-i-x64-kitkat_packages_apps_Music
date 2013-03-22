@@ -109,6 +109,7 @@ public class MediaPlaybackService extends Service {
     private static final int FADEDOWN = 5;
     private static final int FADEUP = 6;
     private static final int TRACK_WENT_TO_NEXT = 7;
+    private static final int UNKNOWN_ERROR = 8;
     private static final int MAX_HISTORY_SIZE = 100;
     
     private static final int PHONESTATECHANGE = 20;
@@ -194,6 +195,11 @@ public class MediaPlaybackService extends Service {
                         mCurrentVolume = 1.0f;
                     }
                     mPlayer.setVolume(mCurrentVolume);
+                    break;
+                case UNKNOWN_ERROR:
+                    gotoIdleState();
+                    Toast.makeText(MediaPlaybackService.this, "unsupported media file!", Toast.LENGTH_SHORT).show();
+                    SystemClock.sleep(1000);
                     break;
                 case SERVER_DIED:
                     if (mIsSupposedToBePlaying) {
@@ -338,6 +344,7 @@ public class MediaPlaybackService extends Service {
                 }
             } else if (CMDPAUSE.equals(cmd) || PAUSE_ACTION.equals(action)) {
                 pause();
+                mPausedByPhoneInUse = false;
                 mPausedByTransientLossOfFocus = false;
             } else if (CMDPLAY.equals(cmd)) {
                 play();
@@ -606,26 +613,6 @@ public class MediaPlaybackService extends Service {
                 crsr.close();
             }
 
-            // Make sure we don't auto-skip to the next song, since that
-            // also starts playback. What could happen in that case is:
-            // - music is paused
-            // - go to UMS and delete some files, including the currently playing one
-            // - come back from UMS
-            // (time passes)
-            // - music app is killed for some reason (out of memory)
-            // - music service is restarted, service restores state, doesn't find
-            //   the "current" file, goes to the next and: playback starts on its
-            //   own, potentially at some random inconvenient time.
-            mOpenFailedCounter = 20;
-            mQuietMode = true;
-            openCurrentAndNext();
-            mQuietMode = false;
-            if (!mPlayer.isInitialized()) {
-                // couldn't restore the saved state
-                mPlayListLen = 0;
-                return;
-            }
-            
             long seekpos = mPreferences.getLong("seekpos", 0);
             seek(seekpos >= 0 && seekpos < duration() ? seekpos : 0);
             Log.d(LOGTAG, "restored queue, currently at position "
@@ -683,6 +670,26 @@ public class MediaPlaybackService extends Service {
                 }
             }
             mShuffleMode = shufmode;
+
+            // Make sure we don't auto-skip to the next song, since that
+            // also starts playback. What could happen in that case is:
+            // - music is paused
+            // - go to UMS and delete some files, including the currently playing one
+            // - come back from UMS
+            // (time passes)
+            // - music app is killed for some reason (out of memory)
+            // - music service is restarted, service restores state, doesn't find
+            //   the "current" file, goes to the next and: playback starts on its
+            //   own, potentially at some random inconvenient time.
+            mOpenFailedCounter = 20;
+            mQuietMode = true;
+            openCurrentAndNext();
+            mQuietMode = false;
+            if (!mPlayer.isInitialized()) {
+                // couldn't restore the saved state
+                mPlayListLen = 0;
+                return;
+            }
         }
     }
     
@@ -727,6 +734,7 @@ public class MediaPlaybackService extends Service {
                 }
             } else if (CMDPAUSE.equals(cmd) || PAUSE_ACTION.equals(action)) {
                 pause();
+                mPausedByPhoneInUse = false;
                 mPausedByTransientLossOfFocus = false;
             } else if (CMDPLAY.equals(cmd)) {
                 play();
@@ -818,10 +826,10 @@ public class MediaPlaybackService extends Service {
                     } else if (action.equals(Intent.ACTION_MEDIA_MOUNTED)) {
                         mMediaMountedCount++;
                         mCardId = MusicUtils.getCardId(MediaPlaybackService.this);
-                        reloadQueue();
                         mQueueIsSaveable = true;
                         notifyChange(QUEUE_CHANGED);
                         notifyChange(META_CHANGED);
+                        reloadQueue();
                     }
                 }
             };
@@ -1397,8 +1405,14 @@ public class MediaPlaybackService extends Service {
      */
     private int getNextPosition(boolean force) {
         if (mRepeatMode == REPEAT_CURRENT) {
-            if (mPlayPos < 0) return 0;
-            return mPlayPos;
+            if (!force) {
+                return mPlayPos < 0 ? 0 : mPlayPos;
+            }
+            if (mPlayPos < 0 || mPlayPos >= mPlayListLen - 1 ) {
+                return 0;
+            } else {
+                return mPlayPos + 1;
+            }
         } else if (mShuffleMode == SHUFFLE_NORMAL) {
             // Pick random next track from the not-yet-played ones
             // TODO: make it work right after adding/removing items in the queue.
@@ -1921,6 +1935,7 @@ public class MediaPlaybackService extends Service {
      */
     public long seek(long pos) {
         if (mPlayer != null && mPlayer.isInitialized()) {
+            manulPause = false;
             if (pos < 0) pos = 0;
             if (pos > mPlayer.duration()) pos = mPlayer.duration();
             return mPlayer.seek(pos);
@@ -2072,6 +2087,11 @@ public class MediaPlaybackService extends Service {
         MediaPlayer.OnErrorListener errorListener = new MediaPlayer.OnErrorListener() {
             public boolean onError(MediaPlayer mp, int what, int extra) {
                 switch (what) {
+                case MediaPlayer.MEDIA_ERROR_UNKNOWN:
+                    mIsInitialized = false;
+                    mCurrentMediaPlayer.release();
+                    mHandler.sendMessage(mHandler.obtainMessage(UNKNOWN_ERROR));
+                    return true;
                 case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
                     mIsInitialized = false;
                     mCurrentMediaPlayer.release();
