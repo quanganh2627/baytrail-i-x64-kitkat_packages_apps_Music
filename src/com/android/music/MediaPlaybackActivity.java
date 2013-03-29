@@ -372,9 +372,16 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
             if (!fromuser || (mService == null)) return;
             // trackball event, allow progress updates
             if (!mFromTouch) {
-                mPosOverride = -1;
-            } else {
                 mPosOverride = mDuration * progress / 1000;
+                try {
+                    if (mService != null) {
+                        mService.seek(mPosOverride);
+                    }
+                } catch (RemoteException ex) {
+                    Log.d("MediaPlaybackActivity", "error happened when change seek bar progress!");
+                }
+            } else {
+                mPosOverride = -1;
             }
         }
         public void onStopTrackingTouch(SeekBar bar) {
