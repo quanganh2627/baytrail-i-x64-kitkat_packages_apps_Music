@@ -432,6 +432,10 @@ public class MediaPlaybackService extends Service {
         if (isPlaying()) {
             Log.e(LOGTAG, "Service being destroyed while still playing.");
         }
+        //unregister the receivers before the mPlayer is null
+        unregisterReceiver(mIntentReceiver);
+        unregisterReceiver(mPhoneReceiver);
+
         // release all MediaPlayer resources, including the native player and wakelocks
         Intent i = new Intent(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION);
         i.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, getAudioSessionId());
@@ -453,8 +457,6 @@ public class MediaPlaybackService extends Service {
             mCursor = null;
         }
 
-        unregisterReceiver(mPhoneReceiver);
-        unregisterReceiver(mIntentReceiver);
         if (mUnmountReceiver != null) {
             unregisterReceiver(mUnmountReceiver);
             mUnmountReceiver = null;
