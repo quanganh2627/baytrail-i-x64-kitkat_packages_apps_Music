@@ -606,12 +606,6 @@ public class MediaPlaybackService extends Service {
             if (crsr != null) {
                 crsr.close();
             }
-
-            long seekpos = mPreferences.getLong("seekpos", 0);
-            seek(seekpos >= 0 && seekpos < duration() ? seekpos : 0);
-            Log.d(LOGTAG, "restored queue, currently at position "
-                    + position() + "/" + duration()
-                    + " (requested " + seekpos + ")");
             
             int repmode = mPreferences.getInt("repeatmode", REPEAT_NONE);
             if (repmode != REPEAT_ALL && repmode != REPEAT_CURRENT) {
@@ -684,6 +678,12 @@ public class MediaPlaybackService extends Service {
                 mPlayListLen = 0;
                 return;
             }
+
+            long seekpos = mPreferences.getLong("seekpos", 0);
+            seek(seekpos >= 0 && seekpos < duration() ? seekpos : 0);
+            Log.d(LOGTAG, "restored queue, currently at position "
+                    + position() + "/" + duration()
+                    + " (requested " + seekpos + ")");
         }
     }
     
