@@ -374,7 +374,11 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
 
     public void onCompletion(MediaPlayer mp) {
         mSeekBar.setProgress(mDuration);
-        updatePlayPause();
+        ImageButton b = (ImageButton) findViewById(R.id.playpause);
+        if (b != null) {
+            b.setImageResource(R.drawable.btn_playback_ic_play_small);
+            mProgressRefresher.removeCallbacksAndMessages(null);
+        }
     }
 
     public void playPauseClicked(View v) {
