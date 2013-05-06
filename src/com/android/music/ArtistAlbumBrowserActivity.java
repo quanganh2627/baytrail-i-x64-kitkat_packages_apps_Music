@@ -325,6 +325,7 @@ public class ArtistAlbumBrowserActivity extends ExpandableListActivity
         menu.add(0, DELETE_ITEM, 0, R.string.delete_item);
         
         ExpandableListContextMenuInfo mi = (ExpandableListContextMenuInfo) menuInfoIn;
+        if (mi == null) return;
         
         int itemtype = ExpandableListView.getPackedPositionType(mi.packedPosition);
         int gpos = ExpandableListView.getPackedPositionGroup(mi.packedPosition);
