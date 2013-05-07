@@ -424,7 +424,6 @@ public class MediaPlaybackService extends Service {
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         // Check that we're not being destroyed while something is still playing.
         if (isPlaying()) {
             Log.e(LOGTAG, "Service being destroyed while still playing.");
@@ -434,8 +433,6 @@ public class MediaPlaybackService extends Service {
         i.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, getAudioSessionId());
         i.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, getPackageName());
         sendBroadcast(i);
-        mPlayer.release();
-        mPlayer = null;
 
         mAudioManager.abandonAudioFocus(mAudioFocusListener);
         //mAudioManager.unregisterRemoteControlClient(mRemoteControlClient);
@@ -443,6 +440,9 @@ public class MediaPlaybackService extends Service {
         // make sure there aren't any other messages coming
         mDelayedStopHandler.removeCallbacksAndMessages(null);
         mMediaplayerHandler.removeCallbacksAndMessages(null);
+
+        mPlayer.release();
+        mPlayer = null;
 
         if (mCursor != null) {
             mCursor.close();
@@ -456,6 +456,7 @@ public class MediaPlaybackService extends Service {
             mUnmountReceiver = null;
         }
         mWakeLock.release();
+        super.onDestroy();
     }
     
     private final char hexdigits [] = new char [] {
@@ -1227,7 +1228,7 @@ public class MediaPlaybackService extends Service {
         mAudioManager.registerMediaButtonEventReceiver(new ComponentName(this.getPackageName(),
                 MediaButtonIntentReceiver.class.getName()));
 
-        if (mPlayer.isInitialized()) {
+        if (mPlayer!=null && mPlayer.isInitialized()) {
             // if we are at the end of the song, go to the next song first
             long duration = mPlayer.duration();
             if (mRepeatMode != REPEAT_CURRENT && duration > 2000 &&
