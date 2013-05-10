@@ -276,6 +276,7 @@ public class AlbumBrowserActivity extends ListActivity
         menu.add(0, DELETE_ITEM, 0, R.string.delete_item);
 
         AdapterContextMenuInfo mi = (AdapterContextMenuInfo) menuInfoIn;
+        if (mi == null) return;
         mAlbumCursor.moveToPosition(mi.position);
         mCurrentAlbumId = mAlbumCursor.getString(mAlbumCursor.getColumnIndexOrThrow(MediaStore.Audio.Albums._ID));
         mCurrentAlbumName = mAlbumCursor.getString(mAlbumCursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM));

@@ -296,6 +296,7 @@ public class PlaylistBrowserActivity extends ListActivity
         }
 
         AdapterContextMenuInfo mi = (AdapterContextMenuInfo) menuInfoIn;
+        if (mi == null) return;
 
         menu.add(0, PLAY_SELECTION, 0, R.string.play_selection);
 

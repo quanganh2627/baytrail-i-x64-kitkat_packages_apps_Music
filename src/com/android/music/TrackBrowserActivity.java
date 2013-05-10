@@ -664,6 +664,7 @@ public class TrackBrowserActivity extends ListActivity
         menu.add(0, USE_AS_RINGTONE, 0, R.string.ringtone_menu);
         menu.add(0, DELETE_ITEM, 0, R.string.delete_item);
         AdapterContextMenuInfo mi = (AdapterContextMenuInfo) menuInfoIn;
+        if (mi == null) return;
         mSelectedPosition =  mi.position;
         mTrackCursor.moveToPosition(mSelectedPosition);
         try {
