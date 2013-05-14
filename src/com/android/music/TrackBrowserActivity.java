@@ -655,6 +655,9 @@ public class TrackBrowserActivity extends ListActivity
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfoIn) {
+        if (mAdapter.getCount() < 1) {
+           return;
+        }
         menu.add(0, PLAY_SELECTION, 0, R.string.play_selection);
         SubMenu sub = menu.addSubMenu(0, ADD_TO_PLAYLIST, 0, R.string.add_to_playlist);
         MusicUtils.makePlaylistMenu(this, sub);
@@ -688,6 +691,10 @@ public class TrackBrowserActivity extends ListActivity
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
+        // if don't select one item do nothing
+        if (mCurrentTrackName == null) {
+           return false;
+        }
         switch (item.getItemId()) {
             case PLAY_SELECTION: {
                 // play the track
