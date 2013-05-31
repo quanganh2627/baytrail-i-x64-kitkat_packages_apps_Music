@@ -422,18 +422,19 @@ public class MediaPlaybackService extends Service {
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         // Check that we're not being destroyed while something is still playing.
         if (isPlaying()) {
             Log.e(LOGTAG, "Service being destroyed while still playing.");
         }
+        // unregister the receivers before the mPlayer is null
+        unregisterReceiver(mIntentReceiver);
+        unregisterReceiver(mPhoneReceiver);
+
         // release all MediaPlayer resources, including the native player and wakelocks
         Intent i = new Intent(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION);
         i.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, getAudioSessionId());
         i.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, getPackageName());
         sendBroadcast(i);
-        mPlayer.release();
-        mPlayer = null;
 
         mAudioManager.abandonAudioFocus(mAudioFocusListener);
         //mAudioManager.unregisterRemoteControlClient(mRemoteControlClient);
@@ -442,18 +443,20 @@ public class MediaPlaybackService extends Service {
         mDelayedStopHandler.removeCallbacksAndMessages(null);
         mMediaplayerHandler.removeCallbacksAndMessages(null);
 
+        mPlayer.release();
+        mPlayer = null;
+
         if (mCursor != null) {
             mCursor.close();
             mCursor = null;
         }
 
-        unregisterReceiver(mPhoneReceiver);
-        unregisterReceiver(mIntentReceiver);
         if (mUnmountReceiver != null) {
             unregisterReceiver(mUnmountReceiver);
             mUnmountReceiver = null;
         }
         mWakeLock.release();
+        super.onDestroy();
     }
     
     private final char hexdigits [] = new char [] {
@@ -1227,7 +1230,7 @@ public class MediaPlaybackService extends Service {
         mAudioManager.registerMediaButtonEventReceiver(new ComponentName(this.getPackageName(),
                 MediaButtonIntentReceiver.class.getName()));
 
-        if (mPlayer.isInitialized()) {
+        if (mPlayer!=null && mPlayer.isInitialized()) {
             // if we are at the end of the song, go to the next song first
             long duration = mPlayer.duration();
             if (mRepeatMode != REPEAT_CURRENT && duration > 2000 &&
