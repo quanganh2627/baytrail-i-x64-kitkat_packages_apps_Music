@@ -1668,7 +1668,7 @@ public class MediaPlaybackService extends Service {
                 mPlayList[first + i] = mPlayList[last + 1 + i];
             }
             mPlayListLen -= last - first + 1;
-            
+
             if (gotonext) {
                 if (mPlayListLen == 0) {
                     stop(true);
@@ -1689,6 +1689,12 @@ public class MediaPlaybackService extends Service {
                     }
                 }
                 notifyChange(META_CHANGED);
+            } else {
+                if (first <= mNextPlayPos && mNextPlayPos <= last) {
+                    Log.d(LOGTAG, "first=" + first + " last=" + last
+                            + " mNextPlayPos=" + mNextPlayPos);
+                    setNextTrack();
+                }
             }
             return last - first + 1;
         }
