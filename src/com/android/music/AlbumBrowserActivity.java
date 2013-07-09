@@ -273,14 +273,17 @@ public class AlbumBrowserActivity extends ListActivity
         if (mAdapter.getCount() < 1) {
             return;
         }
+        AdapterContextMenuInfo mi = (AdapterContextMenuInfo) menuInfoIn;
+        if (mi == null ) return;
+        if (!mAlbumCursor.moveToPosition(mi.position)) {
+            mCurrentAlbumId = null;
+            return;
+        }
         menu.add(0, PLAY_SELECTION, 0, R.string.play_selection);
         SubMenu sub = menu.addSubMenu(0, ADD_TO_PLAYLIST, 0, R.string.add_to_playlist);
         MusicUtils.makePlaylistMenu(this, sub);
         menu.add(0, DELETE_ITEM, 0, R.string.delete_item);
 
-        AdapterContextMenuInfo mi = (AdapterContextMenuInfo) menuInfoIn;
-        if (mi == null) return;
-        mAlbumCursor.moveToPosition(mi.position);
         mCurrentAlbumId = mAlbumCursor.getString(mAlbumCursor.getColumnIndexOrThrow(MediaStore.Audio.Albums._ID));
         mCurrentAlbumName = mAlbumCursor.getString(mAlbumCursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM));
         mCurrentArtistNameForAlbum = mAlbumCursor.getString(
