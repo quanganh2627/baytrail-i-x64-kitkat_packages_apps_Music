@@ -322,11 +322,7 @@ public class ArtistAlbumBrowserActivity extends ExpandableListActivity
         if (mAdapter.getGroupCount() < 1) {
             return;
         }
-        menu.add(0, PLAY_SELECTION, 0, R.string.play_selection);
-        SubMenu sub = menu.addSubMenu(0, ADD_TO_PLAYLIST, 0, R.string.add_to_playlist);
-        MusicUtils.makePlaylistMenu(this, sub);
-        menu.add(0, DELETE_ITEM, 0, R.string.delete_item);
-        
+
         ExpandableListContextMenuInfo mi = (ExpandableListContextMenuInfo) menuInfoIn;
         if (mi == null) return;
         
@@ -334,19 +330,25 @@ public class ArtistAlbumBrowserActivity extends ExpandableListActivity
         int gpos = ExpandableListView.getPackedPositionGroup(mi.packedPosition);
         int cpos = ExpandableListView.getPackedPositionChild(mi.packedPosition);
         if (itemtype == ExpandableListView.PACKED_POSITION_TYPE_GROUP) {
-            if (gpos == -1) {
+            if (gpos == -1 || gpos >= getExpandableListAdapter().getGroupCount()) {
                 // this shouldn't happen
                 Log.d("Artist/Album", "no group");
                 return;
             }
             gpos = gpos - getExpandableListView().getHeaderViewsCount();
-            mArtistCursor.moveToPosition(gpos);
+            if (!mArtistCursor.moveToPosition(gpos)) {
+                return;
+            }
             mCurrentArtistId = mArtistCursor.getString(mArtistCursor.getColumnIndexOrThrow(MediaStore.Audio.Artists._ID));
             mCurrentArtistName = mArtistCursor.getString(mArtistCursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.ARTIST));
             mCurrentAlbumId = null;
             mIsUnknownArtist = mCurrentArtistName == null ||
                     mCurrentArtistName.equals(MediaStore.UNKNOWN_STRING);
             mIsUnknownAlbum = true;
+            menu.add(0, PLAY_SELECTION, 0, R.string.play_selection);
+            SubMenu sub = menu.addSubMenu(0, ADD_TO_PLAYLIST, 0, R.string.add_to_playlist);
+            MusicUtils.makePlaylistMenu(this, sub);
+            menu.add(0, DELETE_ITEM, 0, R.string.delete_item);
             if (mIsUnknownArtist) {
                 menu.setHeaderTitle(getString(R.string.unknown_artist_name));
             } else {
@@ -355,24 +357,32 @@ public class ArtistAlbumBrowserActivity extends ExpandableListActivity
             }
             return;
         } else if (itemtype == ExpandableListView.PACKED_POSITION_TYPE_CHILD) {
-            if (cpos == -1) {
+            if (gpos == -1 || gpos >= getExpandableListAdapter().getGroupCount() || cpos == -1 || cpos >= getExpandableListAdapter().getChildrenCount(gpos) ) {
                 // this shouldn't happen
                 Log.d("Artist/Album", "no child");
                 return;
             }
             Cursor c = (Cursor) getExpandableListAdapter().getChild(gpos, cpos);
-            c.moveToPosition(cpos);
+            if (!c.moveToPosition(cpos)) {
+                return;
+            }
             mCurrentArtistId = null;
             mCurrentAlbumId = Long.valueOf(mi.id).toString();
             mCurrentAlbumName = c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM));
             gpos = gpos - getExpandableListView().getHeaderViewsCount();
-            mArtistCursor.moveToPosition(gpos);
+            if (!mArtistCursor.moveToPosition(gpos)) {
+                return;
+            }
             mCurrentArtistNameForAlbum = mArtistCursor.getString(
                     mArtistCursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.ARTIST));
             mIsUnknownArtist = mCurrentArtistNameForAlbum == null ||
                     mCurrentArtistNameForAlbum.equals(MediaStore.UNKNOWN_STRING);
             mIsUnknownAlbum = mCurrentAlbumName == null ||
                     mCurrentAlbumName.equals(MediaStore.UNKNOWN_STRING);
+            menu.add(0, PLAY_SELECTION, 0, R.string.play_selection);
+            SubMenu sub = menu.addSubMenu(0, ADD_TO_PLAYLIST, 0, R.string.add_to_playlist);
+            MusicUtils.makePlaylistMenu(this, sub);
+            menu.add(0, DELETE_ITEM, 0, R.string.delete_item);
             if (mIsUnknownAlbum) {
                 menu.setHeaderTitle(getString(R.string.unknown_album_name));
             } else {
