@@ -505,6 +505,8 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
         super.onResume();
         updateTrackInfo();
         setPauseButtonImage();
+        setRepeatButtonImage();
+        setShuffleButtonImage();
     }
     
     @Override
@@ -981,10 +983,6 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
             int shuffle = mService.getShuffleMode();
             if (shuffle == MediaPlaybackService.SHUFFLE_NONE) {
                 mService.setShuffleMode(MediaPlaybackService.SHUFFLE_NORMAL);
-                if (mService.getRepeatMode() == MediaPlaybackService.REPEAT_CURRENT) {
-                    mService.setRepeatMode(MediaPlaybackService.REPEAT_ALL);
-                    setRepeatButtonImage();
-                }
                 showToast(R.string.shuffle_on_notif);
             } else if (shuffle == MediaPlaybackService.SHUFFLE_NORMAL ||
                     shuffle == MediaPlaybackService.SHUFFLE_AUTO) {
@@ -994,6 +992,7 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
                 Log.e("MediaPlaybackActivity", "Invalid shuffle mode: " + shuffle);
             }
             setShuffleButtonImage();
+            setRepeatButtonImage();
         } catch (RemoteException ex) {
         }
     }
@@ -1009,16 +1008,13 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
                 showToast(R.string.repeat_all_notif);
             } else if (mode == MediaPlaybackService.REPEAT_ALL) {
                 mService.setRepeatMode(MediaPlaybackService.REPEAT_CURRENT);
-                if (mService.getShuffleMode() != MediaPlaybackService.SHUFFLE_NONE) {
-                    mService.setShuffleMode(MediaPlaybackService.SHUFFLE_NONE);
-                    setShuffleButtonImage();
-                }
                 showToast(R.string.repeat_current_notif);
             } else {
                 mService.setRepeatMode(MediaPlaybackService.REPEAT_NONE);
                 showToast(R.string.repeat_off_notif);
             }
             setRepeatButtonImage();
+            setShuffleButtonImage();
         } catch (RemoteException ex) {
         }
         

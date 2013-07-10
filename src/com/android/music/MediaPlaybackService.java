@@ -1005,7 +1005,7 @@ public class MediaPlaybackService extends Service {
             if (position >= 0) {
                 mPlayPos = position;
             } else {
-                mPlayPos = mRand.nextInt(mPlayListLen);
+                mPlayPos = mRand.nextInt(mPlayListLen, mPlayPos);
             }
             mHistory.clear();
 
@@ -1634,6 +1634,19 @@ public class MediaPlaybackService extends Service {
                 return ret;
             }
         }
+        public int nextInt(int interval, int exclude) {
+            int ret = 0;
+            try {
+               do {
+                   ret = mRandom.nextInt(interval);
+               }while (ret == exclude && interval > 1);
+            } catch (IllegalArgumentException ex) {
+               Log.e("","Illegal argument interval=" + interval);
+            } finally {
+               Log.v("@@@@", "ret = " + ret + " exclude = " + exclude + " interval = "+ interval);
+               return ret;
+            }
+        }
     };
 
     private boolean makeAutoShuffleList() {
@@ -1755,6 +1768,9 @@ public class MediaPlaybackService extends Service {
                 return;
             }
             mShuffleMode = shufflemode;
+            if (mRepeatMode == REPEAT_CURRENT && mShuffleMode != SHUFFLE_NONE) {
+                setRepeatMode(REPEAT_ALL);
+            }
             if (mShuffleMode == SHUFFLE_AUTO) {
                 if (makeAutoShuffleList()) {
                     mPlayListLen = 0;
@@ -1781,6 +1797,9 @@ public class MediaPlaybackService extends Service {
             mRepeatMode = repeatmode;
             setNextTrack();
             saveQueue(false);
+            if (mRepeatMode == REPEAT_CURRENT && mShuffleMode != SHUFFLE_NONE) {
+                setShuffleMode(SHUFFLE_NONE);
+            }
         }
     }
     public int getRepeatMode() {
