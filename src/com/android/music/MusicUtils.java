@@ -771,7 +771,7 @@ public class MusicUtils {
     }
     
     public static void shuffleAll(Context context, Cursor cursor) {
-        playAll(context, cursor, 0, true);
+        playAll(context, cursor, -1, true);
     }
 
     public static void playAll(Context context, Cursor cursor) {
