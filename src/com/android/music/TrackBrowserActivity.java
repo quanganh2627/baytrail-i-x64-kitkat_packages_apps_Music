@@ -658,6 +658,13 @@ public class TrackBrowserActivity extends ListActivity
         if (mAdapter.getCount() < 1) {
            return;
         }
+        AdapterContextMenuInfo mi = (AdapterContextMenuInfo) menuInfoIn;
+        if (mi == null) return;
+        mSelectedPosition =  mi.position;
+        if (!mTrackCursor.moveToPosition(mSelectedPosition)) {
+            mCurrentAlbumName = null;
+            return;
+        }
         menu.add(0, PLAY_SELECTION, 0, R.string.play_selection);
         SubMenu sub = menu.addSubMenu(0, ADD_TO_PLAYLIST, 0, R.string.add_to_playlist);
         MusicUtils.makePlaylistMenu(this, sub);
@@ -666,10 +673,6 @@ public class TrackBrowserActivity extends ListActivity
         }
         menu.add(0, USE_AS_RINGTONE, 0, R.string.ringtone_menu);
         menu.add(0, DELETE_ITEM, 0, R.string.delete_item);
-        AdapterContextMenuInfo mi = (AdapterContextMenuInfo) menuInfoIn;
-        if (mi == null) return;
-        mSelectedPosition =  mi.position;
-        mTrackCursor.moveToPosition(mSelectedPosition);
         try {
             int id_idx = mTrackCursor.getColumnIndexOrThrow(
                     MediaStore.Audio.Playlists.Members.AUDIO_ID);
