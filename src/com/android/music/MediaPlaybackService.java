@@ -2108,6 +2108,10 @@ public class MediaPlaybackService extends Service {
             public boolean onError(MediaPlayer mp, int what, int extra) {
                 switch (what) {
                 case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
+                    Intent i = new Intent(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION);
+                    i.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, getAudioSessionId());
+                    i.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, getPackageName());
+                    sendBroadcast(i);
                     mIsInitialized = false;
                     mCurrentMediaPlayer.release();
                     // Creating a new MediaPlayer and settings its wakemode does not
