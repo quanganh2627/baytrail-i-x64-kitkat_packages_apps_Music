@@ -45,7 +45,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.RemoteException;
 import android.os.SystemClock;
-import android.os.PowerManager;
 import android.provider.MediaStore;
 import android.text.Layout;
 import android.text.TextUtils.TruncateAt;
@@ -184,7 +183,7 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
             mDraggingLabel = false;
         } else if (action == MotionEvent.ACTION_UP ||
                 action == MotionEvent.ACTION_CANCEL) {
-            v.setBackground(null);
+            v.setBackgroundColor(0);
             if (mDraggingLabel) {
                 Message msg = mLabelScroller.obtainMessage(0, tv);
                 mLabelScroller.sendMessageDelayed(msg, 1000);
@@ -370,32 +369,25 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
         }
         public void onProgressChanged(SeekBar bar, int progress, boolean fromuser) {
             if (!fromuser || (mService == null)) return;
-            // trackball event, allow progress updates
-            if (!mFromTouch) {
+            long now = SystemClock.elapsedRealtime();
+            if ((now - mLastSeekEventTime) > 250) {
+                mLastSeekEventTime = now;
                 mPosOverride = mDuration * progress / 1000;
                 try {
-                    if (mService != null) {
-                        mService.seek(mPosOverride);
-                    }
+                    mService.seek(mPosOverride);
                 } catch (RemoteException ex) {
-                    Log.d("MediaPlaybackActivity", "error happened when change seek bar progress!");
                 }
-            } else {
-                mPosOverride = -1;
+
+                // trackball event, allow progress updates
+                if (!mFromTouch) {
+                    refreshNow();
+                    mPosOverride = -1;
+                }
             }
         }
         public void onStopTrackingTouch(SeekBar bar) {
             mPosOverride = -1;
             mFromTouch = false;
-            int progress = bar.getProgress();
-            long position = mDuration * progress / 1000;
-            try {
-                if (mService != null) {
-                    mService.seek(position);
-                }
-            } catch (RemoteException ex) {
-                Log.d("MediaPlaybackActivity", "error happened during onStopTrackingTouch().");
-            }
         }
     };
     
@@ -490,7 +482,6 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
         IntentFilter f = new IntentFilter();
         f.addAction(MediaPlaybackService.PLAYSTATE_CHANGED);
         f.addAction(MediaPlaybackService.META_CHANGED);
-        f.addAction(Intent.ACTION_SCREEN_ON);
         registerReceiver(mStatusListener, new IntentFilter(f));
         updateTrackInfo();
         long next = refreshNow();
@@ -507,8 +498,6 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
         super.onResume();
         updateTrackInfo();
         setPauseButtonImage();
-        setRepeatButtonImage();
-        setShuffleButtonImage();
     }
     
     @Override
@@ -985,6 +974,10 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
             int shuffle = mService.getShuffleMode();
             if (shuffle == MediaPlaybackService.SHUFFLE_NONE) {
                 mService.setShuffleMode(MediaPlaybackService.SHUFFLE_NORMAL);
+                if (mService.getRepeatMode() == MediaPlaybackService.REPEAT_CURRENT) {
+                    mService.setRepeatMode(MediaPlaybackService.REPEAT_ALL);
+                    setRepeatButtonImage();
+                }
                 showToast(R.string.shuffle_on_notif);
             } else if (shuffle == MediaPlaybackService.SHUFFLE_NORMAL ||
                     shuffle == MediaPlaybackService.SHUFFLE_AUTO) {
@@ -994,7 +987,6 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
                 Log.e("MediaPlaybackActivity", "Invalid shuffle mode: " + shuffle);
             }
             setShuffleButtonImage();
-            setRepeatButtonImage();
         } catch (RemoteException ex) {
         }
     }
@@ -1010,13 +1002,16 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
                 showToast(R.string.repeat_all_notif);
             } else if (mode == MediaPlaybackService.REPEAT_ALL) {
                 mService.setRepeatMode(MediaPlaybackService.REPEAT_CURRENT);
+                if (mService.getShuffleMode() != MediaPlaybackService.SHUFFLE_NONE) {
+                    mService.setShuffleMode(MediaPlaybackService.SHUFFLE_NONE);
+                    setShuffleButtonImage();
+                }
                 showToast(R.string.repeat_current_notif);
             } else {
                 mService.setRepeatMode(MediaPlaybackService.REPEAT_NONE);
                 showToast(R.string.repeat_off_notif);
             }
             setRepeatButtonImage();
-            setShuffleButtonImage();
         } catch (RemoteException ex) {
         }
         
@@ -1166,11 +1161,7 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
         if (!paused) {
             Message msg = mHandler.obtainMessage(REFRESH);
             mHandler.removeMessages(REFRESH);
-            //Post the refresh messgae only when the Screen is ON
-            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-            if (pm.isScreenOn()) {
-                mHandler.sendMessageDelayed(msg, delay);
-            }
+            mHandler.sendMessageDelayed(msg, delay);
         }
     }
 
@@ -1182,9 +1173,7 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
             if ((pos >= 0) && (mDuration > 0)) {
                 mCurrentTime.setText(MusicUtils.makeTimeString(this, pos / 1000));
                 int progress = (int) (1000 * pos / mDuration);
-                if (!mFromTouch) {
-                    mProgress.setProgress(progress);
-                }
+                mProgress.setProgress(progress);
                 
                 if (mService.isPlaying()) {
                     mCurrentTime.setVisibility(View.VISIBLE);
@@ -1264,9 +1253,6 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
                 queueNextRefresh(1);
             } else if (action.equals(MediaPlaybackService.PLAYSTATE_CHANGED)) {
                 setPauseButtonImage();
-            }
-            if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
-                queueNextRefresh(1);
             }
         }
     };

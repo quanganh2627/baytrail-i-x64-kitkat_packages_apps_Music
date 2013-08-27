@@ -18,11 +18,9 @@ package com.android.music;
 
 import android.app.Activity;
 import android.content.AsyncQueryHandler;
-import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -33,12 +31,9 @@ import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.text.TextUtils;
-import android.telephony.PhoneStateListener;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -61,37 +56,19 @@ import java.io.IOException;
 public class AudioPreview extends Activity implements OnPreparedListener, OnErrorListener, OnCompletionListener
 {
     private final static String TAG = "AudioPreview";
-    private final static int PHONESTATECHANGE = 1;
-    private final static boolean DEBUG = true;
     private PreviewPlayer mPlayer;
     private TextView mTextLine1;
     private TextView mTextLine2;
     private TextView mLoadingText;
     private SeekBar mSeekBar;
     private Handler mProgressRefresher;
-    private Handler mPhoneHandle;
     private boolean mSeeking = false;
     private int mDuration;
     private Uri mUri;
     private long mMediaId = -1;
     private static final int OPEN_IN_MUSIC = 1;
     private AudioManager mAudioManager;
-    private TelephonyManager mTelephonyManager;
     private boolean mPausedByTransientLossOfFocus;
-    private boolean mProgressRefresh;
-    private boolean mPausedByPhoneInUse;
-    private Handler mPhoneHandler;
-    private BroadcastReceiver mPhoneReceiver;
-    private final PhoneStateListener mPhoneStateListener = new PhoneStateListener() {
-
-        @Override
-        public void onCallStateChanged(int state, String incomingNumber) {
-           Message msg = mPhoneHandle.obtainMessage(PHONESTATECHANGE, state, 0);
-           if (null != msg) {
-               msg.sendToTarget();
-           }
-        }
-    };
 
     @Override
     public void onCreate(Bundle icicle) {
@@ -106,17 +83,6 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
         if (mUri == null) {
             finish();
             return;
-        }
-        mTelephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        if (null != mTelephonyManager) {
-            if (DEBUG) {
-                Log.d(TAG, "call state :" + mTelephonyManager.getCallState());
-            }
-            if (TelephonyManager.CALL_STATE_IDLE != mTelephonyManager.getCallState()) {
-                Toast.makeText(this, R.string.calling, Toast.LENGTH_SHORT).show();
-                finish();
-                return;
-            }
         }
         String scheme = mUri.getScheme();
         
@@ -227,71 +193,6 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
                 setNames();
             }
         }
-
-        mPhoneHandle = new Handler() {
-            @Override
-            public void handleMessage(Message msg) {
-                if (DEBUG) {
-                    Log.d(TAG, "mPhoneHandler.handleMessage " + msg.what);
-                }
-                if (PHONESTATECHANGE == msg.what ) {
-                    switch (msg.arg1) {
-                        case TelephonyManager.CALL_STATE_IDLE:
-                            if (DEBUG) {
-                                 Log.d(TAG, "Telephone state change: TelephonyManager.CALL_STATE_IDLE:" );
-                            }
-                            if (null != mPlayer && !mPlayer.isPlaying() && mPausedByPhoneInUse) {
-                                 mPausedByPhoneInUse = false;
-                                 mPlayer.start();
-                            }
-                            break;
-                        case TelephonyManager.CALL_STATE_RINGING:
-                            if (DEBUG) {
-                                 Log.d(TAG, "Telephone state change: TelephonyManager.CALL_STATE_RINGING:" );
-                            }
-                        case TelephonyManager.CALL_STATE_OFFHOOK:
-                            if (DEBUG) {
-                                 Log.d(TAG, "Telephone state change: TelephonyManager.CALL_STATE_OFFHOOK:" );
-                            }
-                            if (null != mPlayer && mPlayer.isPlaying()) {
-                                 mPausedByPhoneInUse = true;
-                                 mPlayer.pause();
-                            }
-                            break;
-                        default:
-                            Log.e(TAG, "Unknown phone state change code");
-                    }
-                }
-            }
-        };
-
-        mPhoneReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (DEBUG) {
-                    Log.d(TAG, "action = " + intent.getAction());
-                }
-                mTelephonyManager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
-            }
-        };
-        IntentFilter phoneFilter = new IntentFilter();
-        phoneFilter.addAction(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
-        registerReceiver(mPhoneReceiver, phoneFilter);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        mProgressRefresh = true;
-        if (mProgressRefresher != null) {
-            mProgressRefresher.postDelayed(new ProgressRefresher(), 200);
-        }
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        mProgressRefresh = false;
     }
 
     @Override
@@ -304,9 +205,6 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
     @Override
     public void onDestroy() {
         stopPlayback();
-        if (null != mPhoneReceiver) {
-            unregisterReceiver(mPhoneReceiver);
-        }
         super.onDestroy();
     }
 
@@ -411,10 +309,7 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
                 mSeekBar.setProgress(mPlayer.getCurrentPosition());
             }
             mProgressRefresher.removeCallbacksAndMessages(null);
-            //Post the refresh message only when the activity is in foreground
-            if (mProgressRefresh) {
-                mProgressRefresher.postDelayed(new ProgressRefresher(), 200);
-            }
+            mProgressRefresher.postDelayed(new ProgressRefresher(), 200);
         }
     }
     
@@ -435,20 +330,17 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
             mSeeking = true;
         }
         public void onProgressChanged(SeekBar bar, int progress, boolean fromuser) {
-            if (fromuser) {
+            if (!fromuser) {
                 return;
             }
             // Protection for case of simultaneously tapping on seek bar and exit
             if (mPlayer == null) {
                 return;
             }
+            mPlayer.seekTo(progress);
         }
         public void onStopTrackingTouch(SeekBar bar) {
             mSeeking = false;
-            int progress = bar.getProgress();
-            if (mPlayer != null) {
-                mPlayer.seekTo(progress);
-            }
         }
     };
 
@@ -460,11 +352,7 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
 
     public void onCompletion(MediaPlayer mp) {
         mSeekBar.setProgress(mDuration);
-        ImageButton b = (ImageButton) findViewById(R.id.playpause);
-        if (b != null) {
-            b.setImageResource(R.drawable.btn_playback_ic_play_small);
-            mProgressRefresher.removeCallbacksAndMessages(null);
-        }
+        updatePlayPause();
     }
 
     public void playPauseClicked(View v) {
@@ -487,21 +375,18 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
         // database, and we could open it in the full music app instead.
         // Ideally, we would hand off the currently running mediaplayer
         // to the music UI, which can probably be done via a public static
-
-        //menu.add(0, OPEN_IN_MUSIC, 0, "open in music");
+        menu.add(0, OPEN_IN_MUSIC, 0, "open in music");
         return true;
     }
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        /* as now threre is no menu so remove below
         MenuItem item = menu.findItem(OPEN_IN_MUSIC);
         if (mMediaId >= 0) {
             item.setVisible(true);
             return true;
         }
         item.setVisible(false);
-        */
         return false;
     }
     

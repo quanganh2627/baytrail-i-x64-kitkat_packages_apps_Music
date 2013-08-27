@@ -311,8 +311,5 @@
 
     <!-- Menu text for the item controlling the audio effects panel [CHAR LIMIT=15] -->
     <string name="effectspanel">Sound effects</string>
-
-    <!-- Shown in the toast,if user try to preview audio when calling-->
-    <string name="calling">Could not preview audio during call.</string>
 </resources>
 

@@ -319,36 +319,30 @@ public class ArtistAlbumBrowserActivity extends ExpandableListActivity
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfoIn) {
-        if (mAdapter.getGroupCount() < 1) {
-            return;
-        }
-
+        menu.add(0, PLAY_SELECTION, 0, R.string.play_selection);
+        SubMenu sub = menu.addSubMenu(0, ADD_TO_PLAYLIST, 0, R.string.add_to_playlist);
+        MusicUtils.makePlaylistMenu(this, sub);
+        menu.add(0, DELETE_ITEM, 0, R.string.delete_item);
+        
         ExpandableListContextMenuInfo mi = (ExpandableListContextMenuInfo) menuInfoIn;
-        if (mi == null) return;
         
         int itemtype = ExpandableListView.getPackedPositionType(mi.packedPosition);
         int gpos = ExpandableListView.getPackedPositionGroup(mi.packedPosition);
         int cpos = ExpandableListView.getPackedPositionChild(mi.packedPosition);
         if (itemtype == ExpandableListView.PACKED_POSITION_TYPE_GROUP) {
-            if (gpos == -1 || gpos >= getExpandableListAdapter().getGroupCount()) {
+            if (gpos == -1) {
                 // this shouldn't happen
                 Log.d("Artist/Album", "no group");
                 return;
             }
             gpos = gpos - getExpandableListView().getHeaderViewsCount();
-            if (!mArtistCursor.moveToPosition(gpos)) {
-                return;
-            }
+            mArtistCursor.moveToPosition(gpos);
             mCurrentArtistId = mArtistCursor.getString(mArtistCursor.getColumnIndexOrThrow(MediaStore.Audio.Artists._ID));
             mCurrentArtistName = mArtistCursor.getString(mArtistCursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.ARTIST));
             mCurrentAlbumId = null;
             mIsUnknownArtist = mCurrentArtistName == null ||
                     mCurrentArtistName.equals(MediaStore.UNKNOWN_STRING);
             mIsUnknownAlbum = true;
-            menu.add(0, PLAY_SELECTION, 0, R.string.play_selection);
-            SubMenu sub = menu.addSubMenu(0, ADD_TO_PLAYLIST, 0, R.string.add_to_playlist);
-            MusicUtils.makePlaylistMenu(this, sub);
-            menu.add(0, DELETE_ITEM, 0, R.string.delete_item);
             if (mIsUnknownArtist) {
                 menu.setHeaderTitle(getString(R.string.unknown_artist_name));
             } else {
@@ -357,32 +351,24 @@ public class ArtistAlbumBrowserActivity extends ExpandableListActivity
             }
             return;
         } else if (itemtype == ExpandableListView.PACKED_POSITION_TYPE_CHILD) {
-            if (gpos == -1 || gpos >= getExpandableListAdapter().getGroupCount() || cpos == -1 || cpos >= getExpandableListAdapter().getChildrenCount(gpos) ) {
+            if (cpos == -1) {
                 // this shouldn't happen
                 Log.d("Artist/Album", "no child");
                 return;
             }
             Cursor c = (Cursor) getExpandableListAdapter().getChild(gpos, cpos);
-            if (!c.moveToPosition(cpos)) {
-                return;
-            }
+            c.moveToPosition(cpos);
             mCurrentArtistId = null;
             mCurrentAlbumId = Long.valueOf(mi.id).toString();
             mCurrentAlbumName = c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM));
             gpos = gpos - getExpandableListView().getHeaderViewsCount();
-            if (!mArtistCursor.moveToPosition(gpos)) {
-                return;
-            }
+            mArtistCursor.moveToPosition(gpos);
             mCurrentArtistNameForAlbum = mArtistCursor.getString(
                     mArtistCursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.ARTIST));
             mIsUnknownArtist = mCurrentArtistNameForAlbum == null ||
                     mCurrentArtistNameForAlbum.equals(MediaStore.UNKNOWN_STRING);
             mIsUnknownAlbum = mCurrentAlbumName == null ||
                     mCurrentAlbumName.equals(MediaStore.UNKNOWN_STRING);
-            menu.add(0, PLAY_SELECTION, 0, R.string.play_selection);
-            SubMenu sub = menu.addSubMenu(0, ADD_TO_PLAYLIST, 0, R.string.add_to_playlist);
-            MusicUtils.makePlaylistMenu(this, sub);
-            menu.add(0, DELETE_ITEM, 0, R.string.delete_item);
             if (mIsUnknownAlbum) {
                 menu.setHeaderTitle(getString(R.string.unknown_album_name));
             } else {
@@ -396,10 +382,6 @@ public class ArtistAlbumBrowserActivity extends ExpandableListActivity
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
-        // if don't select anything, do nothing
-        if (mCurrentArtistId == null && mCurrentAlbumId == null) {
-            return false;
-        }
         switch (item.getItemId()) {
             case PLAY_SELECTION: {
                 // play everything by the selected artist
@@ -627,7 +609,7 @@ public class ArtistAlbumBrowserActivity extends ExpandableListActivity
         }
         
         private void getColumnIndices(Cursor cursor) {
-            if (cursor != null && !cursor.isClosed()) {
+            if (cursor != null) {
                 mGroupArtistIdIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists._ID);
                 mGroupArtistIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.ARTIST);
                 mGroupAlbumIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.NUMBER_OF_ALBUMS);
