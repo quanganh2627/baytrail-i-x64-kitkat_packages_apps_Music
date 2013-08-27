@@ -242,6 +242,9 @@ public class PlaylistBrowserActivity extends ListActivity
         if (mAdapter == null) {
             return;
         }
+        if (cursor != null && cursor.isClosed()) {
+            return;
+        }
         mAdapter.changeCursor(cursor);
 
         if (mPlaylistCursor == null) {
@@ -296,6 +299,10 @@ public class PlaylistBrowserActivity extends ListActivity
         }
 
         AdapterContextMenuInfo mi = (AdapterContextMenuInfo) menuInfoIn;
+        if (mi == null) return;
+        if (!mPlaylistCursor.moveToPosition(mi.position)) {
+            return;
+        }
 
         menu.add(0, PLAY_SELECTION, 0, R.string.play_selection);
 
@@ -311,7 +318,6 @@ public class PlaylistBrowserActivity extends ListActivity
             menu.add(0, RENAME_PLAYLIST, 0, R.string.rename_playlist_menu);
         }
 
-        mPlaylistCursor.moveToPosition(mi.position);
         menu.setHeaderTitle(mPlaylistCursor.getString(mPlaylistCursor.getColumnIndexOrThrow(
                 MediaStore.Audio.Playlists.NAME)));
     }
@@ -617,6 +623,11 @@ public class PlaylistBrowserActivity extends ListActivity
             if (mActivity.isFinishing() && cursor != null) {
                 cursor.close();
                 cursor = null;
+            }
+            if (cursor != null && cursor.isClosed()) {
+                mActivity.mReScanHandler.sendEmptyMessage(0);
+                mActivity.getListView().clearTextFilter();
+                return;
             }
             if (cursor != mActivity.mPlaylistCursor) {
                 mActivity.mPlaylistCursor = cursor;

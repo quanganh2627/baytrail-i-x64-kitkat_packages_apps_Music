@@ -151,8 +151,9 @@ implements MusicUtils.Defs, ServiceConnection
         }
 
         setContentView(R.layout.query_activity);
+        setTitle(getString(R.string.search_title) + " - " + mFilterString);
         mTrackList = getListView();
-        mTrackList.setTextFilterEnabled(true);
+        mTrackList.setTextFilterEnabled(false);
         if (mAdapter == null) {
             mAdapter = new QueryListAdapter(
                     getApplication(),
@@ -162,12 +163,8 @@ implements MusicUtils.Defs, ServiceConnection
                     new String[] {},
                     new int[] {});
             setListAdapter(mAdapter);
-            if (TextUtils.isEmpty(mFilterString)) {
-                getQueryCursor(mAdapter.getQueryHandler(), null);
-            } else {
-                mTrackList.setFilterText(mFilterString);
-                mFilterString = null;
-            }
+            getQueryCursor(mAdapter.getQueryHandler(), mFilterString);
+            mFilterString = null;
         } else {
             mAdapter.setActivity(this);
             setListAdapter(mAdapter);
