@@ -380,9 +380,8 @@ public class MediaPlaybackActivity extends Activity implements MusicUtils.Defs,
                 } catch (RemoteException ex) {
                     Log.d("MediaPlaybackActivity", "error happened when change seek bar progress!");
                 }
-            } else {
-                mPosOverride = -1;
             }
+            mPosOverride = -1;
         }
         public void onStopTrackingTouch(SeekBar bar) {
             mPosOverride = -1;

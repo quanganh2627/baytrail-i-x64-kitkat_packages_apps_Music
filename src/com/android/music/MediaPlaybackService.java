@@ -2114,6 +2114,9 @@ public class MediaPlaybackService extends Service {
                 case MediaPlayer.MEDIA_ERROR_UNKNOWN:
                     mIsInitialized = false;
                     mCurrentMediaPlayer.release();
+                    // create a new MediaPlayer, as then it will be used.
+                    mCurrentMediaPlayer = new CompatMediaPlayer();
+                    mCurrentMediaPlayer.setWakeMode(MediaPlaybackService.this, PowerManager.PARTIAL_WAKE_LOCK);
                     mHandler.sendMessage(mHandler.obtainMessage(UNKNOWN_ERROR));
                     return true;
                 case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
