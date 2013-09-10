@@ -1565,7 +1565,7 @@ public class MediaPlaybackService extends Service {
             notify = true;
         }
 
-        int len = mAutoShuffleList.length;
+        int len = mAutoShuffleList == null ? -1 : mAutoShuffleList.length;
         if (len <= 0) {
             return;
         }
