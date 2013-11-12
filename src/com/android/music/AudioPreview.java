@@ -69,6 +69,7 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
     private static final int OPEN_IN_MUSIC = 1;
     private AudioManager mAudioManager;
     private boolean mPausedByTransientLossOfFocus;
+    private boolean mProgressRefresh;
 
     @Override
     public void onCreate(Bundle icicle) {
@@ -196,6 +197,21 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        mProgressRefresh = true;
+        if (mProgressRefresher != null) {
+            mProgressRefresher.postDelayed(new ProgressRefresher(), 200);
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mProgressRefresh = false;
+    }
+
+    @Override
     public Object onRetainNonConfigurationInstance() {
         PreviewPlayer player = mPlayer;
         mPlayer = null;
@@ -309,7 +325,10 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
                 mSeekBar.setProgress(mPlayer.getCurrentPosition());
             }
             mProgressRefresher.removeCallbacksAndMessages(null);
-            mProgressRefresher.postDelayed(new ProgressRefresher(), 200);
+            //Post the refresh message only when the activity is in foreground
+            if (mProgressRefresh) {
+                mProgressRefresher.postDelayed(new ProgressRefresher(), 200);
+            }
         }
     }
     
