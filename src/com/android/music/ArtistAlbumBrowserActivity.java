@@ -319,12 +319,16 @@ public class ArtistAlbumBrowserActivity extends ExpandableListActivity
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfoIn) {
+        if (mAdapter.getGroupCount() < 1) {
+            return;
+        }
         menu.add(0, PLAY_SELECTION, 0, R.string.play_selection);
         SubMenu sub = menu.addSubMenu(0, ADD_TO_PLAYLIST, 0, R.string.add_to_playlist);
         MusicUtils.makePlaylistMenu(this, sub);
         menu.add(0, DELETE_ITEM, 0, R.string.delete_item);
         
         ExpandableListContextMenuInfo mi = (ExpandableListContextMenuInfo) menuInfoIn;
+        if (mi == null) return;
         
         int itemtype = ExpandableListView.getPackedPositionType(mi.packedPosition);
         int gpos = ExpandableListView.getPackedPositionGroup(mi.packedPosition);
@@ -382,6 +386,10 @@ public class ArtistAlbumBrowserActivity extends ExpandableListActivity
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
+        // if don't select anything, do nothing
+        if (mCurrentArtistId == null && mCurrentAlbumId == null) {
+            return false;
+        }
         switch (item.getItemId()) {
             case PLAY_SELECTION: {
                 // play everything by the selected artist
@@ -609,7 +617,7 @@ public class ArtistAlbumBrowserActivity extends ExpandableListActivity
         }
         
         private void getColumnIndices(Cursor cursor) {
-            if (cursor != null) {
+            if (cursor != null && !cursor.isClosed()) {
                 mGroupArtistIdIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists._ID);
                 mGroupArtistIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.ARTIST);
                 mGroupAlbumIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.NUMBER_OF_ALBUMS);

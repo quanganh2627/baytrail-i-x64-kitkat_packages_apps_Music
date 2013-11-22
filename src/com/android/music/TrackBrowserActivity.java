@@ -463,7 +463,7 @@ public class TrackBrowserActivity extends ListActivity
                         // compilation album
                         fancyName = mTrackCursor.getString(idx);
                     }    
-                    cursor.deactivate();
+                    cursor.close();
                 }
                 if (fancyName == null || fancyName.equals(MediaStore.UNKNOWN_STRING)) {
                     fancyName = getString(R.string.unknown_album_name);
@@ -492,7 +492,7 @@ public class TrackBrowserActivity extends ListActivity
                         cursor.moveToFirst();
                         fancyName = cursor.getString(0);
                     }
-                    cursor.deactivate();
+                    cursor.close();
                 }
             }
         } else if (mGenre != null) {
@@ -507,7 +507,7 @@ public class TrackBrowserActivity extends ListActivity
                     cursor.moveToFirst();
                     fancyName = cursor.getString(0);
                 }
-                cursor.deactivate();
+                cursor.close();
             }
         }
 
@@ -646,6 +646,9 @@ public class TrackBrowserActivity extends ListActivity
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfoIn) {
+        if (mAdapter.getCount() < 1) {
+            return;
+        }
         menu.add(0, PLAY_SELECTION, 0, R.string.play_selection);
         SubMenu sub = menu.addSubMenu(0, ADD_TO_PLAYLIST, 0, R.string.add_to_playlist);
         MusicUtils.makePlaylistMenu(this, sub);
@@ -655,6 +658,7 @@ public class TrackBrowserActivity extends ListActivity
         menu.add(0, USE_AS_RINGTONE, 0, R.string.ringtone_menu);
         menu.add(0, DELETE_ITEM, 0, R.string.delete_item);
         AdapterContextMenuInfo mi = (AdapterContextMenuInfo) menuInfoIn;
+        if (mi == null) return;
         mSelectedPosition =  mi.position;
         mTrackCursor.moveToPosition(mSelectedPosition);
         try {
@@ -679,6 +683,10 @@ public class TrackBrowserActivity extends ListActivity
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
+        // if don't select one item do nothing
+        if (mCurrentTrackName == null) {
+            return false;
+        }
         switch (item.getItemId()) {
             case PLAY_SELECTION: {
                 // play the track
@@ -1309,6 +1317,14 @@ public class TrackBrowserActivity extends ListActivity
         {
             if (mCurrentPlaylistCursor != null)
                 mCurrentPlaylistCursor.deactivate();
+        }
+
+        @Override
+        public void close()
+        {
+            if (mCurrentPlaylistCursor != null) {
+                mCurrentPlaylistCursor.close();
+            }
         }
 
         @Override

@@ -407,6 +407,7 @@ public class MusicPicker extends ListActivity
         super.onCreate(icicle);
         
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
         
         int sortMode = TRACK_MENU;
         if (icicle == null) {
@@ -642,7 +643,7 @@ public class MusicPicker extends ListActivity
             try {
                 mMediaPlayer.setDataSource(this, mSelectedUri);
                 mMediaPlayer.setOnCompletionListener(this);
-                mMediaPlayer.setAudioStreamType(AudioManager.STREAM_RING);
+                mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
                 mMediaPlayer.prepare();
                 mMediaPlayer.start();
                 mPlayingId = newId;
