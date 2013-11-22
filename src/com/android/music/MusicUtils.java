@@ -454,9 +454,6 @@ public class MusicUtils {
     }
     
     public static void deleteTracks(Context context, long [] list) {
-        if (sService == null) {
-            return;
-        }
         
         String [] cols = new String [] { MediaStore.Audio.Media._ID, 
                 MediaStore.Audio.Media.DATA, MediaStore.Audio.Media.ALBUM_ID };
@@ -771,7 +768,7 @@ public class MusicUtils {
     }
     
     public static void shuffleAll(Context context, Cursor cursor) {
-        playAll(context, cursor, -1, true);
+        playAll(context, cursor, 0, true);
     }
 
     public static void playAll(Context context, Cursor cursor) {

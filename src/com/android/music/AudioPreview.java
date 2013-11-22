@@ -69,7 +69,6 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
     private static final int OPEN_IN_MUSIC = 1;
     private AudioManager mAudioManager;
     private boolean mPausedByTransientLossOfFocus;
-    private boolean mProgressRefresh;
 
     @Override
     public void onCreate(Bundle icicle) {
@@ -197,21 +196,6 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        mProgressRefresh = true;
-        if (mProgressRefresher != null) {
-            mProgressRefresher.postDelayed(new ProgressRefresher(), 200);
-        }
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        mProgressRefresh = false;
-    }
-
-    @Override
     public Object onRetainNonConfigurationInstance() {
         PreviewPlayer player = mPlayer;
         mPlayer = null;
@@ -325,10 +309,7 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
                 mSeekBar.setProgress(mPlayer.getCurrentPosition());
             }
             mProgressRefresher.removeCallbacksAndMessages(null);
-            //Post the refresh message only when the activity is in foreground
-            if (mProgressRefresh) {
-                mProgressRefresher.postDelayed(new ProgressRefresher(), 200);
-            }
+            mProgressRefresher.postDelayed(new ProgressRefresher(), 200);
         }
     }
     
@@ -349,20 +330,17 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
             mSeeking = true;
         }
         public void onProgressChanged(SeekBar bar, int progress, boolean fromuser) {
-            if (fromuser) {
+            if (!fromuser) {
                 return;
             }
             // Protection for case of simultaneously tapping on seek bar and exit
             if (mPlayer == null) {
                 return;
             }
+            mPlayer.seekTo(progress);
         }
         public void onStopTrackingTouch(SeekBar bar) {
             mSeeking = false;
-            int progress = bar.getProgress();
-            if (mPlayer != null) {
-                mPlayer.seekTo(progress);
-            }
         }
     };
 
@@ -374,11 +352,7 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
 
     public void onCompletion(MediaPlayer mp) {
         mSeekBar.setProgress(mDuration);
-        ImageButton b = (ImageButton) findViewById(R.id.playpause);
-        if (b != null) {
-            b.setImageResource(R.drawable.btn_playback_ic_play_small);
-            mProgressRefresher.removeCallbacksAndMessages(null);
-        }
+        updatePlayPause();
     }
 
     public void playPauseClicked(View v) {
@@ -401,21 +375,18 @@ public class AudioPreview extends Activity implements OnPreparedListener, OnErro
         // database, and we could open it in the full music app instead.
         // Ideally, we would hand off the currently running mediaplayer
         // to the music UI, which can probably be done via a public static
-
-        //menu.add(0, OPEN_IN_MUSIC, 0, "open in music");
+        menu.add(0, OPEN_IN_MUSIC, 0, "open in music");
         return true;
     }
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        /* as now threre is no menu so remove below
         MenuItem item = menu.findItem(OPEN_IN_MUSIC);
         if (mMediaId >= 0) {
             item.setVisible(true);
             return true;
         }
         item.setVisible(false);
-        */
         return false;
     }
     
