@@ -173,7 +173,7 @@ public class RenamePlaylist extends Activity
                         new String[]{MediaStore.Audio.Playlists._ID},
                         MediaStore.Audio.Playlists.NAME + "=?",
                         new String[]{name}, null);
-                if (cursor.getCount() > 0) {
+                if (cursor != null && cursor.getCount() > 0) {
                     setResult(RESULT_CANCELED);
                     Toast.makeText(RenamePlaylist.this, "Already exists a playlist with name \""
                             + name + "\"!", Toast.LENGTH_LONG).show();
