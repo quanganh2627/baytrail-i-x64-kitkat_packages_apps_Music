@@ -242,9 +242,6 @@ public class PlaylistBrowserActivity extends ListActivity
         if (mAdapter == null) {
             return;
         }
-        if (cursor != null && cursor.isClosed()) {
-            return;
-        }
         mAdapter.changeCursor(cursor);
 
         if (mPlaylistCursor == null) {
@@ -620,11 +617,6 @@ public class PlaylistBrowserActivity extends ListActivity
             if (mActivity.isFinishing() && cursor != null) {
                 cursor.close();
                 cursor = null;
-            }
-            if (cursor != null && cursor.isClosed()) {
-                mActivity.mReScanHandler.sendEmptyMessage(0);
-                mActivity.getListView().clearTextFilter();
-                return;
             }
             if (cursor != mActivity.mPlaylistCursor) {
                 mActivity.mPlaylistCursor = cursor;

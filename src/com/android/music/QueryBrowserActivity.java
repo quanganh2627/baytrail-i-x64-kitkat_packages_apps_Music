@@ -268,7 +268,6 @@ implements MusicUtils.Defs, ServiceConnection
             return;
         }
         MusicUtils.hideDatabaseError(this);
-        mTrackList.requestFocus();
     }
     
     @Override
