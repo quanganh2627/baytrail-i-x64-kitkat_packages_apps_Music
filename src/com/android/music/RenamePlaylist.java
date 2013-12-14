@@ -169,15 +169,26 @@ public class RenamePlaylist extends Activity
             String name = mPlaylist.getText().toString();
             if (name != null && name.length() > 0) {
                 ContentResolver resolver = getContentResolver();
-                ContentValues values = new ContentValues(1);
-                values.put(MediaStore.Audio.Playlists.NAME, name);
-                resolver.update(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
-                        values,
-                        MediaStore.Audio.Playlists._ID + "=?",
-                        new String[] { Long.valueOf(mRenameId).toString()});
-                
-                setResult(RESULT_OK);
-                Toast.makeText(RenamePlaylist.this, R.string.playlist_renamed_message, Toast.LENGTH_SHORT).show();
+                Cursor cursor = resolver.query(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
+                        new String[]{MediaStore.Audio.Playlists._ID},
+                        MediaStore.Audio.Playlists.NAME + "=?",
+                        new String[]{name}, null);
+                if (cursor != null && cursor.getCount() > 0) {
+                    setResult(RESULT_CANCELED);
+                    Toast.makeText(RenamePlaylist.this, "Already exists a playlist with name \""
+                            + name + "\"!", Toast.LENGTH_LONG).show();
+                } else {
+                    ContentValues values = new ContentValues(1);
+                    values.put(MediaStore.Audio.Playlists.NAME, name);
+                    resolver.update(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
+                            values,
+                            MediaStore.Audio.Playlists._ID + "=?",
+                            new String[] { Long.valueOf(mRenameId).toString()});
+                    setResult(RESULT_OK);
+                    Toast.makeText(RenamePlaylist.this,
+                            R.string.playlist_renamed_message,
+                            Toast.LENGTH_SHORT).show();
+                }
                 finish();
             }
         }
