@@ -2095,6 +2095,13 @@ public class MediaPlaybackService extends Service {
                     mCurrentMediaPlayer.setWakeMode(MediaPlaybackService.this, PowerManager.PARTIAL_WAKE_LOCK);
                     mHandler.sendMessageDelayed(mHandler.obtainMessage(SERVER_DIED), 2000);
                     return true;
+                case -19://MEDIA_ERROR_NOT_SUPPORT_FORMAT
+                    if (mNextMediaPlayer != null) {
+                        mHandler.sendMessage(mHandler.obtainMessage(UNKNOWN_ERROR));
+                        SystemClock.sleep(50);
+                        mNextMediaPlayer.start();
+                    }
+                    return true;
                 default:
                     Log.d("MultiPlayer", "Error: " + what + "," + extra);
                     break;
