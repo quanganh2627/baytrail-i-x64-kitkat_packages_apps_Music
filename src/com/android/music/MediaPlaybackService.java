@@ -815,17 +815,32 @@ public class MediaPlaybackService extends Service {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     String action = intent.getAction();
+                    String filePath = "";
+                    Cursor cur = getContentResolver().query(Uri.parse(getPath()), null, null, null, null);
+                    if (cur != null) {
+                        while (cur.moveToNext()) {
+                        filePath = cur.getString(cur.getColumnIndex("_data"));
+                        }
+                    }
                     if (action.equals(Intent.ACTION_MEDIA_EJECT)) {
-                        saveQueue(true);
-                        mQueueIsSaveable = false;
-                        closeExternalStorageFiles(intent.getData().getPath());
+                        if(filePath.startsWith("/storage/emulated/0")) {
+                            //do nothing
+                        } else {
+                            saveQueue(true);
+                            mQueueIsSaveable = false;
+                            closeExternalStorageFiles(intent.getData().getPath());
+                        }
                     } else if (action.equals(Intent.ACTION_MEDIA_MOUNTED)) {
-                        mMediaMountedCount++;
-                        mCardId = MusicUtils.getCardId(MediaPlaybackService.this);
-                        reloadQueue();
-                        mQueueIsSaveable = true;
-                        notifyChange(QUEUE_CHANGED);
-                        notifyChange(META_CHANGED);
+                        if(filePath.startsWith("/storage/emulated/0")) {
+                            //do nothing
+                        } else {
+                            mMediaMountedCount++;
+                            mCardId = MusicUtils.getCardId(MediaPlaybackService.this);
+                            reloadQueue();
+                            mQueueIsSaveable = true;
+                            notifyChange(QUEUE_CHANGED);
+                            notifyChange(META_CHANGED);
+                        }
                     }
                 }
             };
