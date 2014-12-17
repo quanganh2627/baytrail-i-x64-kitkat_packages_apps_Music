@@ -1871,7 +1871,7 @@ public class MediaPlaybackService extends Service {
         private boolean mIsInitialized = false;
 
         public MultiPlayer() {
-            mCurrentMediaPlayer.setWakeMode(MediaPlaybackService.this, PowerManager.PARTIAL_WAKE_LOCK);
+            /* mCurrentMediaPlayer.setWakeMode(MediaPlaybackService.this, PowerManager.PARTIAL_WAKE_LOCK); */
         }
 
         public void setDataSource(String path) {
@@ -1918,7 +1918,7 @@ public class MediaPlaybackService extends Service {
                 return;
             }
             mNextMediaPlayer = new CompatMediaPlayer();
-            mNextMediaPlayer.setWakeMode(MediaPlaybackService.this, PowerManager.PARTIAL_WAKE_LOCK);
+            /* mNextMediaPlayer.setWakeMode(MediaPlaybackService.this, PowerManager.PARTIAL_WAKE_LOCK); */
             mNextMediaPlayer.setAudioSessionId(getAudioSessionId());
             if (setDataSourceImpl(mNextMediaPlayer, path)) {
                 mCurrentMediaPlayer.setNextMediaPlayer(mNextMediaPlayer);
@@ -1973,7 +1973,7 @@ public class MediaPlaybackService extends Service {
                     // and allow the device to go to sleep.
                     // This temporary wakelock is released when the RELEASE_WAKELOCK
                     // message is processed, but just in case, put a timeout on it.
-                    mWakeLock.acquire(30000);
+//                    mWakeLock.acquire(30000);
                     mHandler.sendEmptyMessage(TRACK_ENDED);
                     mHandler.sendEmptyMessage(RELEASE_WAKELOCK);
                 }
@@ -1990,7 +1990,7 @@ public class MediaPlaybackService extends Service {
                     // require the media service, so it's OK to do this now, while the
                     // service is still being restarted
                     mCurrentMediaPlayer = new CompatMediaPlayer(); 
-                    mCurrentMediaPlayer.setWakeMode(MediaPlaybackService.this, PowerManager.PARTIAL_WAKE_LOCK);
+                    /* mCurrentMediaPlayer.setWakeMode(MediaPlaybackService.this, PowerManager.PARTIAL_WAKE_LOCK); */
                     mHandler.sendMessageDelayed(mHandler.obtainMessage(SERVER_DIED), 2000);
                     return true;
                 default:
